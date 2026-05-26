@@ -49,7 +49,8 @@ int dequeue(packet_queue_t *queue, packet_t *packet)
         pthread_cond_wait(&queue->not_empty, &queue->mutex);
     }
 
-    memcpy(packet, &queue->packets[queue->head], sizeof(packet_t));
+    memcpy(packet->data, queue->packets[queue->head].data, queue->packets[queue->head].length);
+    packet->length = queue->packets[queue->head].length;
 
     queue->head = (queue->head + 1) % QUEUE_SIZE;
     queue->count--;
