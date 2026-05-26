@@ -6,7 +6,7 @@ INCLUDES=-Iinclude
 
 SRC := $(wildcard src/*.c)
 
-TARGET=ether_sniffer
+TARGET=ethernet_packet_sniffer
 
 all:
 	$(CC) $(CFLAGS) $(INCLUDES) $(SRC) -o $(TARGET) $(LIBS)
