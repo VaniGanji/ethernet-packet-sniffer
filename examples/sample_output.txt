@@ -1,0 +1,80 @@
+=============================================
+ Ethernet Packet Sniffer Started
+=============================================
+ Interface : en0
+ Snaplen   : 2048 bytes
+ Timeout   : 100 ms
+=============================================
+=============================================
+Ethernet Header
+  Src MAC : 82:A4:96:8C:B4:07
+  Dst MAC : FC:B0:DE:A3:51:4A
+  EtherType : 0x86DD (IPv6)
+  Unsupported L3 Protocol
+=============================================
+Ethernet Header
+  Src MAC : FC:B0:DE:A3:51:4A
+  Dst MAC : 01:00:5E:00:00:01
+  EtherType : 0x0800 (IPv4)
+IPv4 Header
+  Src IP  : 192.168.31.1
+  Dst IP  : 224.0.0.1
+  Protocol: 2 (Not Supported)
+  Unsupported L4 Protocol
+=============================================
+Ethernet Header
+  Src MAC : FC:B0:DE:A3:51:4A
+  Dst MAC : 82:A4:96:8C:B4:07
+  EtherType : 0x0800 (IPv4)
+IPv4 Header
+  Src IP  : 17.248.239.10
+  Dst IP  : 192.168.31.209
+  Protocol: 17 (UDP)
+UDP Header
+  Src Port : 443
+  Dst Port : 61684
+=============================================
+Ethernet Header
+  Src MAC : 82:A4:96:8C:B4:07
+  Dst MAC : FC:B0:DE:A3:51:4A
+  EtherType : 0x0800 (IPv4)
+IPv4 Header
+  Src IP  : 192.168.31.209
+  Dst IP  : 17.248.239.10
+  Protocol: 17 (UDP)
+UDP Header
+  Src Port : 61684
+  Dst Port : 443
+  =============================================
+Ethernet Header
+  Src MAC : FC:B0:DE:A3:51:4A
+  Dst MAC : 82:A4:96:8C:B4:07
+  EtherType : 0x0800 (IPv4)
+IPv4 Header
+  Src IP  : 140.82.114.21
+  Dst IP  : 192.168.31.209
+  Protocol: 6 (TCP)
+TCP Header
+  Src Port : 443
+  Dst Port : 50865
+=============================================
+Ethernet Header
+  Src MAC : 82:A4:96:8C:B4:07
+  Dst MAC : FC:B0:DE:A3:51:4A
+  EtherType : 0x0800 (IPv4)
+IPv4 Header
+  Src IP  : 192.168.31.209
+  Dst IP  : 140.82.114.21
+  Protocol: 6 (TCP)
+TCP Header
+  Src Port : 50865
+  Dst Port : 443
+=============================================
+Ethernet Header
+  Src MAC : 82:A4:96:8C:B4:07
+  Dst MAC : 4A:D4:41:35:FA:21
+  EtherType : 0x0806 (ARP)
+  Unsupported L3 Protocol
+^C
+Stopping capture...
+Sniffer stopped successfully
