@@ -76,7 +76,7 @@ make
 
 # Run
 ## macOS
-sudo ./packet_sniffer en0
+sudo ./ethernet_packet_sniffer en0
 
 ---
 
