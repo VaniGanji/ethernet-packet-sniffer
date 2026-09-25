@@ -1,8 +1,8 @@
 [package]
-name = "Rust"
+name = "capd"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 libc = "0.2.189"
-nix = { version = "0.31.3", features = ["fs", "process", "signal", "net", "socket"] }
+nix = { version = "0.31.3", features = ["fs", "process", "signal", "net", "socket", "event"] }
