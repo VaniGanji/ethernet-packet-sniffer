@@ -15,3 +15,16 @@
   256-byte read buffer) in one write; confirmed the loop performed two
   reads (256B + 94B) in the same epoll event, fully draining the message
   rather than leaving bytes stranded in the kernel buffer
+
+## POSIX message queues
+- Built: mq_demo (src/bin/mq_demo.rs) — sender and receiver as two
+  independently-launched processes, communicating only through a named POSIX
+  message queue (/capd_demo_queue)
+- Verified real concurrency: started the receiver first, confirmed via
+  `ps` that it was alive and blocked *before* the sender process even
+  existed, then started the sender independently
+- Demonstrated priority ordering: a message sent LAST but marked high
+  priority was received FIRST when all sends completed before any
+  receive; when the receiver was already blocked and messages arrived
+  one at a time, ordering correctly applied only among messages present
+  in the queue at each receive call — not a strict global reordering guarantee across the whole exchange
