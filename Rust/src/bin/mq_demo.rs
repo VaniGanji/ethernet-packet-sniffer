@@ -1,4 +1,4 @@
-//! Day 3a — POSIX message queue demo: one binary, two roles (send/recv),
+//! POSIX message queue demo: one binary, two roles (send/recv),
 //! chosen by argv[1]. Demonstrates message boundaries and priority ordering
 //! — two things a byte-stream IPC (pipe, UDS SOCK_STREAM) does NOT give you.
 

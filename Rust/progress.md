@@ -28,3 +28,14 @@
   receive; when the receiver was already blocked and messages arrived
   one at a time, ordering correctly applied only among messages present
   in the queue at each receive call — not a strict global reordering guarantee across the whole exchange
+
+## Shared-memory SPSC ring buffer
+- Built: shm_demo (src/bin/shm_demo.rs), a producer and a consumer as two separate processes sharing a POSIX shared-memory segment
+- Verified: 12 messages through the ring, in order, with correct wraparound (slot 7 back to slot 0)
+- Memory ordering: producer publishes `tail` with Release, consumer reads it
+  with Acquire, so the slot write is visible before the new tail is seen.
+- Observed backpressure: with the consumer started late, the producer filled
+  7 of 8 slots and blocked until the consumer freed one. Usable capacity is
+  N-1 by design, so a full ring can be told apart from an empty one
+- Stale state: the segment in /dev/shm outlives both processes, so the
+  `cleanup` subcommand is needed
