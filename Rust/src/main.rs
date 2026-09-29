@@ -20,6 +20,8 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use nix::sys::epoll::{Epoll, EpollCreateFlags, EpollEvent, EpollFlags};
 use std::collections::HashMap;
+use std::os::unix::net::UnixDatagram;
+use std::time::Instant;
 
  
 /*const CONTROL_FIFO: &str = "/tmp/capd.ctl";
@@ -28,7 +30,26 @@ fn runtime_paths() -> (String, String) {
     let dir = std::env::var("RUNTIME_DIRECTORY").unwrap_or_else(|_| "/tmp".to_string());
     (format!("{dir}/capd.ctl"), format!("{dir}/capd.sock"))
 }
- 
+
+fn sd_notify(message: &str) {
+    let Ok(socket_path) = std::env::var("NOTIFY_SOCKET") else {
+        return; // not running under systemd Type=notify — nothing to do
+    };
+    match UnixDatagram::unbound() {
+        Ok(sock) => {
+            if let Err(e) = sock.send_to(message.as_bytes(), &socket_path) {
+                eprintln!("[capd] sd_notify send failed: {e}");
+            }
+        }
+        Err(e) => eprintln!("[capd] sd_notify socket creation failed: {e}"),
+    }
+}
+
+fn watchdog_interval() -> Option<std::time::Duration> {
+    let usec: u64 = std::env::var("WATCHDOG_USEC").ok()?.parse().ok()?;
+    Some(std::time::Duration::from_micros(usec) / 2)
+}
+
 /// Set by the SIGTERM/SIGINT handler. Checked once per loop iteration.
 /// Signal handlers must only do async-signal-safe work, so we just flip
 /// a flag here and react to it in normal control flow — never do I/O or
@@ -164,10 +185,21 @@ fn main() -> std::io::Result<()> {
     let mut ctl_buf = [0u8; 256];
  
     println!("[capd] entering epoll event loop (blocking, zero busy-wait)");
+    sd_notify("READY=1");
+
+    let watchdog_period = watchdog_interval();
+    let mut last_watchdog_ping = Instant::now();
  
     loop {
         if SHUTDOWN.load(Ordering::SeqCst) {
             break;
+        }
+
+        if let Some(period) = watchdog_period {
+            if last_watchdog_ping.elapsed() >= period {
+                sd_notify("WATCHDOG=1");
+                last_watchdog_ping = Instant::now();
+            }
         }
  
         // epoll_wait blocks here — genuinely zero CPU used — until at least
@@ -262,6 +294,7 @@ fn main() -> std::io::Result<()> {
         }
     }
  
+    sd_notify("STOPPING=1");
     println!(
         "[capd] shutdown requested, {} packets captured this run",
         packet_count.load(Ordering::Relaxed)

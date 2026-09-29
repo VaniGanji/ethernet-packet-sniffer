@@ -3,7 +3,7 @@ Description=capd packet capture daemon
 After=network.target
 
 [Service]
-Type=simple
+Type=notify
 ExecStart=/usr/local/bin/capd
 
 User=ubuntu
@@ -12,6 +12,7 @@ CapabilityBoundingSet=CAP_NET_RAW
 
 RuntimeDirectory=capd
 
+WatchdogSec=10
 Restart=on-failure
 RestartSec=1
 

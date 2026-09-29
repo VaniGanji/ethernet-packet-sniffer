@@ -63,3 +63,23 @@
 - Verified the contrast case: a clean `systemctl stop`, and a `kill -TERM`
   (which capd's existing signal handler turns into a graceful, code-0
   exit), do NOT trigger a restart.
+
+## systemd - Type=notify and watchdog integration
+- Implemented sd_notify: writes plain text (READY=1,
+  WATCHDOG=1, STOPPING=1) to a Unix datagram socket at the path systemd
+  provides in $NOTIFY_SOCKET
+- READY=1 sent only after FIFO, UDS and epoll setup all succeed
+- Watchdog pings sent at HALF of WATCHDOG_USEC (systemd's own
+  recommendation), so one delayed tick doesn't cause a false-positive kill
+- Unit file changed: Type=simple -> Type=notify, added WatchdogSec=10
+- Verified the watchdog mechanism definitively: added a deliberate
+  sleep(30) right after sd_notify("READY=1") to simulate a hang, rebuilt,
+  redeployed, restarted. Confirmed via journalctl:
+    - systemd logged "Watchdog timeout (limit 10s)!" exactly 10s after
+      start, matching WatchdogSec=10 precisely
+    - systemd killed the hung process with SIGABRT (not SIGTERM/SIGKILL) —
+      deliberately chosen by systemd to produce a core dump for debugging
+    - systemd categorized this as Result=watchdog, distinct from a plain
+      crash or clean stop
+    - Restart=on-failure then relaunched capd with a new PID, confirming
+      full detect-and-recover behavior with zero manual intervention.
