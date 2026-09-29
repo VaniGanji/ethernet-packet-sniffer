@@ -39,3 +39,27 @@
   N-1 by design, so a full ring can be told apart from an empty one
 - Stale state: the segment in /dev/shm outlives both processes, so the
   `cleanup` subcommand is needed
+
+## Daemons and systemd
+- Wrote capd.service: Type=simple, RuntimeDirectory=capd, Restart=on-failure,
+  AmbientCapabilities=CAP_NET_RAW etc.
+
+- Running as a systemd service:
+  cargo build --release
+  sudo install -m 755 target/release/capd /usr/local/bin/capd
+  sudo systemctl daemon-reload
+  sudo systemctl start capd
+  systemctl status capd
+  journalctl -u capd -f
+
+- Changed capd to read $RUNTIME_DIRECTORY for its FIFO/socket paths,
+  falling back to /tmp when run manually (no systemd) — verified both
+  modes work correctly
+- Verified the actual payoff: repeated kill -9 on the running process
+  resulted in systemd relaunching it every time, each with a new PID,
+  confirmed via `systemctl show capd -p NRestarts` and journalctl showing
+  "Main process exited, code=killed, status=9/KILL" followed by
+  "Scheduled restart job" for each occurrence
+- Verified the contrast case: a clean `systemctl stop`, and a `kill -TERM`
+  (which capd's existing signal handler turns into a graceful, code-0
+  exit), do NOT trigger a restart.

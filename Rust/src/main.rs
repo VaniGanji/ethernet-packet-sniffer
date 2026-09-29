@@ -22,8 +22,12 @@ use nix::sys::epoll::{Epoll, EpollCreateFlags, EpollEvent, EpollFlags};
 use std::collections::HashMap;
 
  
-const CONTROL_FIFO: &str = "/tmp/capd.ctl";
-const CONTROL_SOCK: &str = "/tmp/capd.sock";
+/*const CONTROL_FIFO: &str = "/tmp/capd.ctl";
+const CONTROL_SOCK: &str = "/tmp/capd.sock"; */
+fn runtime_paths() -> (String, String) {
+    let dir = std::env::var("RUNTIME_DIRECTORY").unwrap_or_else(|_| "/tmp".to_string());
+    (format!("{dir}/capd.ctl"), format!("{dir}/capd.sock"))
+}
  
 /// Set by the SIGTERM/SIGINT handler. Checked once per loop iteration.
 /// Signal handlers must only do async-signal-safe work, so we just flip
@@ -45,8 +49,8 @@ fn install_signal_handlers() {
 /// Open (or create) the control FIFO. Returns a non-blocking read handle.
 /// Classic FIFO gotcha: open() on a FIFO blocks until a writer exists,
 /// unless you pass O_NONBLOCK.
-fn setup_control_fifo() -> std::io::Result<File> {
-    let path = Path::new(CONTROL_FIFO);
+fn setup_control_fifo(fifo_path: &str) -> std::io::Result<File> {
+    let path = Path::new(fifo_path);
     let _ = unlink(path); // defensive: clear a stale FIFO left by a kill -9
     mkfifo(path, Mode::S_IRUSR | Mode::S_IWUSR)
         .map_err(|e| std::io::Error::from_raw_os_error(e as i32))?;
@@ -59,8 +63,8 @@ fn setup_control_fifo() -> std::io::Result<File> {
 /// A Unix domain socket, SOCK_STREAM, listening for control connections.
 /// Unlike the FIFO, this supports multiple simultaneous clients and gives
 /// each one its own connection (its own fd) rather than one shared channel.
-fn setup_control_socket() -> nix::Result<OwnedFd> {
-    let path = Path::new(CONTROL_SOCK);
+fn setup_control_socket(sock_path: &str) -> nix::Result<OwnedFd> {
+    let path = Path::new(sock_path);
     let _ = unlink(path); // stale socket file from a previous crashed run
     let listener = socket(
         AddressFamily::Unix,
@@ -113,15 +117,17 @@ fn handle_command(cmd: &str, packet_count: &AtomicU64) -> String {
 fn main() -> std::io::Result<()> {
     println!("[capd] starting, pid={}", std::process::id());
     install_signal_handlers();
+
+    let (fifo_path, sock_path) = runtime_paths();
  
-    let mut ctl_fifo = setup_control_fifo()?;
-    println!("[capd] FIFO control channel ready at {CONTROL_FIFO}");
+    let mut ctl_fifo = setup_control_fifo(&fifo_path)?;
+    println!("[capd] FIFO control channel ready at {fifo_path}");
  
     let ctl_sock =
-        setup_control_socket().map_err(|e| std::io::Error::from_raw_os_error(e as i32))?;
-    println!("[capd] UDS control channel ready at {CONTROL_SOCK}");
-    println!("[capd] try: echo status > {CONTROL_FIFO}");
-    println!("[capd] or:  echo status | nc -U {CONTROL_SOCK}");
+        setup_control_socket(&sock_path).map_err(|e| std::io::Error::from_raw_os_error(e as i32))?;
+    println!("[capd] UDS control channel ready at {sock_path}");
+    println!("[capd] try: echo status > {fifo_path}");
+    println!("[capd] or:  echo status | nc -U {sock_path}");
  
     let cap_sock = setup_capture_socket();
     if let Err(ref e) = cap_sock {
@@ -260,8 +266,8 @@ fn main() -> std::io::Result<()> {
         "[capd] shutdown requested, {} packets captured this run",
         packet_count.load(Ordering::Relaxed)
     );
-    let _ = unlink(Path::new(CONTROL_FIFO));
-    let _ = unlink(Path::new(CONTROL_SOCK));
+    let _ = unlink(Path::new(&fifo_path));
+    let _ = unlink(Path::new(&sock_path));
     println!("[capd] control fifo and socket removed, exiting cleanly");
     Ok(())
 }
