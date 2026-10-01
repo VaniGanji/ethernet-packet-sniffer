@@ -1,3 +1,5 @@
+![CI](https://github.com/VaniGanji/ethernet-packet-sniffer/actions/workflows/ci.yml/badge.svg)
+
 Ethernet Packet Sniffer — from C to Rust, and into Linux systems internals
 
 A personal learning project that starts from an existing C packet sniffer and uses it as the seed for a broader, hands-on exploration of Linux systems programming in Rust: daemons, IPC mechanisms and event-driven I/O.
