@@ -83,3 +83,5 @@
       crash or clean stop
     - Restart=on-failure then relaunched capd with a new PID, confirming
       full detect-and-recover behavior with zero manual intervention.
+  
+  ## <!-- CI trigger test -->
